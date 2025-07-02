@@ -8,5 +8,3 @@ source venv/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 
-# Baixa o modelo do SpaCy
-python install_models.py
