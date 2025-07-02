@@ -22,6 +22,13 @@ stop_words = set(stopwords.words("english"))
 
 PASTA_PDFS = "artigos"
 
+padroes = {
+    "objetivo": re.compile(r"\b(objective|aim|purpose|goal)(s)? (of|this|the)? (study|article|research)?\b", re.IGNORECASE),
+    "problema": re.compile(r"\b(problem|issue|challenge)(s)?\b", re.IGNORECASE),
+    "metodo": re.compile(r"\b(method|methodology|interview(s)?|survey(s)?|content analysis|case study|experiment|approach|technique(s)?|) (were|was)? (conducted|used|realized|taken)?\b", re.IGNORECASE),
+    "contribuicao": re.compile(r"\b(contribute(s)?|contribution|advances|adds|fills a gap) (to)?\b", re.IGNORECASE),
+}
+
 # #### Funções comuns ####
 
 def extrair_texto_pdf_limpo(path):
@@ -87,19 +94,6 @@ def etapa1_identificar_termos_mais_citados():
 
 # #### Etapa 2: extrair objetivo, problema, método e contribuição ####
 
-def extrair_trecho_por_chave(texto, chaves):
-    """
-    Extrai trecho que contenha uma das palavras-chave em chaves.
-    Retorna o parágrafo que contém a chave encontrada.
-    """
-    paragrafos = re.split(r'\n{2,}', texto)
-    for p in paragrafos:
-        p_lower = p.lower()
-        for chave in chaves:
-            if chave.lower() in p_lower:
-                return p.strip()
-    return ""
-
 def etapa2_extrair_info_artigos():
     resultados = []
 
@@ -112,20 +106,24 @@ def etapa2_extrair_info_artigos():
         texto = extrair_texto_pdf_limpo(caminho)
         corpo, _ = remover_referencias(texto)
 
-        # Objetivo - busca frases com 'objective'
-        objetivo = extrair_trecho_por_chave(corpo, ["objective"])
-        # Problema - busca frases com 'problem'
-        problema = extrair_trecho_por_chave(corpo, ["problem"])
-        # Metodo - busca frases com palavras relacionadas
-        metodo = extrair_trecho_por_chave(corpo, ["method", "methodology", "interview", "survey", "content analysis"])
-        # Contribuição - busca frases com 'contributes to' que não contenha 'objective'
+        doc = nlp(corpo) # Processamento com spaCy
+
+        objetivo = ""
+        problema = ""
+        metodo = ""
         contribuicao = ""
-        paragrafos = re.split(r'\n{2,}', corpo)
-        for p in paragrafos:
-            p_lower = p.lower()
-            if "contributes to" in p_lower and "objective" not in p_lower:
-                contribuicao = p.strip()
-                break
+
+        # Verifica padrões em cada sentença
+        for sentenca in doc.sents:
+            if padroes["objetivo"].search(sentenca.text):
+                objetivo += sentenca.text.strip() + ";;"
+            if padroes["problema"].search(sentenca.text):
+                problema += sentenca.text.strip() + ";;"
+            if padroes["metodo"].search(sentenca.text):
+                metodo += sentenca.text.strip() + ";;"
+            if padroes["contribuicao"].search(sentenca.text):
+                contribuicao += sentenca.text.strip() + ";;"
+
 
         resultados.append({
             "arquivo": arquivo,
@@ -169,10 +167,11 @@ if __name__ == "__main__":
     # Etapa 1
     contagem_unigramas, referencias = etapa1_identificar_termos_mais_citados()
     salvar_referencias(referencias)
+
     # # Etapa 2
-    # infos = etapa2_extrair_info_artigos()
+    infos = etapa2_extrair_info_artigos()
 
     # Etapa 3
-    # etapa3_salvar_dados(infos)
+    etapa3_salvar_dados(infos)
 
     # print("\nProcessamento concluído. Dados extraídos salvos em dados_extraidos.txt")
