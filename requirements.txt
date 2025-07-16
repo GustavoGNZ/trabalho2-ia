@@ -1,3 +1,0 @@
-spacy
-PyPDF2
-nltk
