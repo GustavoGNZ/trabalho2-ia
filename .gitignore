@@ -2,3 +2,15 @@
 venv
 referencias_extraidas.txt
 dados_extraidos.txt
+
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.toc
+*.nav
+*.out
+*.snm
+*.vrb
